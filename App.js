@@ -4,10 +4,27 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import RNPickerSelect from "react-native-picker-select";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import {AppStateContext} from './AppStateProvider';
 function HomeScreen() {
   const [hours, setHours] = React.useState(0);
   const [minutes, setMinutes] = React.useState(0);
+  const context = React.useContext(AppStateContext)
+
+  async function getReminders(){
+    try {
+      const time = await AsyncStorage.getItem("@reminders");
+      let parsed = JSON.parse(time)
+      if(parsed!=null){
+        context.setMyReminders(await parsed)
+      }
+      console.log(await parsed)
+    } catch (e) {
+      alert('Cannot load reminders')
+    }
+  }
+  React.useEffect(() => {
+    getReminders()
+  },[]);
   const handleHoursChange = (value) => {
     setHours(value);
   };
@@ -20,6 +37,7 @@ function HomeScreen() {
   };
 
   saveData = async () =>{
+    const updateReminders=[]
     let time = {
       hours: hours,
       minutes: minutes,
@@ -27,8 +45,14 @@ function HomeScreen() {
     try {
       const reminders = await AsyncStorage.getItem("@reminders");
       parsed = JSON.parse(reminders)
-      const updateReminders = [...parsed, time] 
+      if(parsed!=null){
+        updateReminders = [time]
+      }else{
+        updateReminders = [...parsed, time]
+      }
+      // context.setMyReminders(updateReminders)
       AsyncStorage.setItem('@reminders', JSON.stringify(updateReminders));
+      
     } catch (e) {
       alert('Cannot save reminders')
     }
@@ -152,44 +176,41 @@ function HomeScreen() {
 }
 
 function SettingsScreen() {
-  const [dataLoaded, setDataLoaded] = React.useState(false);
-  const [reminders, setReminders] = React.useState([]);
-  async function getReminders(){
-    try {
-      const time = await AsyncStorage.getItem("@reminders");
-      let parsed = JSON.parse(time)
-      setReminders(await parsed)
-    } catch (e) {
-      alert('Cannot load reminders')
-    }
-  }
-  React.useEffect(() => {
-    getReminders()
-    console.log(reminders)
-  },[]);
+  const context = React.useContext(AppStateContext)
 
-  displayData = async () =>{
-        try {
-          const reminders = await AsyncStorage.getItem("@reminders");
-          let parsed = JSON.parse(reminders)
-          console.log (parsed)
-        } catch (e) {
-          alert('Cannot load reminders')
-        }
-  }
+  // async function getReminders(){
+  //   try {
+  //     const time = await AsyncStorage.getItem("@reminders");
+  //     let parsed = JSON.parse(time)
+  //     setReminders(await parsed)
+  //   } catch (e) {
+  //     alert('Cannot load reminders')
+  //   }
+  // }
+  // React.useEffect(() => {
+  //   getReminders()
+  //   console.log(reminders)
+  // },[]);
+
+  // displayData = async () =>{
+  //       try {
+  //         const reminders = await AsyncStorage.getItem("@reminders");
+  //         let parsed = JSON.parse(reminders)
+  //         console.log (parsed)
+  //       } catch (e) {
+  //         alert('Cannot load reminders')
+  //       }
+  // }
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-     {/* {reminders.map((element,i) => {
+     {context.myReminders.map((element,i) => {
       return (
-        <View key={element.i} style={{margin: 10}}>
+        <View key={i} style={{margin: 10}}>
           <Text>{element.hours}</Text>
           <Text>{element.minutes}</Text>
         </View>
       );
-    })} */}
-    <TouchableOpacity onPress={displayData}>
-        <Text>Click me to display data</Text>
-      </TouchableOpacity>
+    })}
     </View>
   );
 }
@@ -197,7 +218,9 @@ function SettingsScreen() {
 const Tab = createBottomTabNavigator();
 
 export default function App() {
+ 
   return (
+    <AppStateProvider>
     <NavigationContainer>
       <Tab.Navigator>
         <Tab.Screen
@@ -215,5 +238,6 @@ export default function App() {
         <Tab.Screen name="Settings" component={SettingsScreen} />
       </Tab.Navigator>
     </NavigationContainer>
+    </AppStateProvider>
   );
 }
