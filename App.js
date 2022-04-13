@@ -17,7 +17,6 @@ function HomeScreen() {
       if(parsed!=null){
         context.setMyReminders(await parsed)
       }
-      console.log(await parsed)
     } catch (e) {
       alert('Cannot load reminders')
     }
@@ -37,7 +36,7 @@ function HomeScreen() {
   };
 
   saveData = async () =>{
-    const updateReminders=[]
+    let updateReminders=[]
     let time = {
       hours: hours,
       minutes: minutes,
@@ -45,12 +44,14 @@ function HomeScreen() {
     try {
       const reminders = await AsyncStorage.getItem("@reminders");
       parsed = JSON.parse(reminders)
-      if(parsed!=null){
-        updateReminders = [time]
-      }else{
+      if(parsed === null){
+        updateReminders.push(time)
+        
+      }
+      else{
         updateReminders = [...parsed, time]
       }
-      // context.setMyReminders(updateReminders)
+      context.setMyReminders(updateReminders)
       AsyncStorage.setItem('@reminders', JSON.stringify(updateReminders));
       
     } catch (e) {
@@ -165,9 +166,6 @@ function HomeScreen() {
           { label: "59 Minutes", value: 59 },
         ]}
       />
-      <Text>{hours}</Text>
-      <Text>{minutes}</Text>
-
       <TouchableOpacity onPress={saveData}>
         <Text>Click me to save data</Text>
       </TouchableOpacity>
